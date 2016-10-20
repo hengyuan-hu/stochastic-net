@@ -19,7 +19,7 @@ def _load_batch(filename):
     xs = d['data']
     ys = to_categorical(np.array(d['labels']), NUM_CLASSES)
     xs = xs.reshape(-1, 3, 32, 32)
-    xs = (xs - COLOR_MEAN_RGB) / COLOR_STD_RGB
+    xs = (xs - COLOR_MEAN_RGB) # / COLOR_STD_RGB
     return xs, ys
 
 

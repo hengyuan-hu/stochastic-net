@@ -27,7 +27,7 @@ def tf_model_loss(y, pred, mean=True):
         return tf.reduce_mean(categorical_crossentropy(pred, y))
     else:
         # Return a vector with the loss per sample
-        return categorical_crossentropy(y, pred)
+        return categorical_crossentropy(pred, y)
 
 
 def _get_learning_rate(epoch):
@@ -72,9 +72,18 @@ def tf_model_train(sess, x, y, predictions, X_train, Y_train, X_test, Y_test,
             prev = time.time()
             print("Epoch %s, lr: %s" % (epoch, _get_learning_rate(epoch)))
 
+            ordering = np.array(range(len(Y_train)))
+            np.random.shuffle(ordering)
+            # print ordering[:100]
+            X_train = X_train[ordering]
+            Y_train = Y_train[ordering]
+            # print X_train.shape
+            # print Y_train.shape
+
             # Compute number of batches
             nb_batches = int(math.ceil(float(len(X_train)) / FLAGS.batch_size))
             assert nb_batches * FLAGS.batch_size >= len(X_train)
+            loss_vals = np.zeros(nb_batches)
 
             for batch in range(nb_batches):
                 # Compute batch start and end indices
@@ -86,19 +95,19 @@ def tf_model_train(sess, x, y, predictions, X_train, Y_train, X_test, Y_test,
                     batch_xs = data_augmentor(batch_xs)
 
                 # Perform one training step
-                train_step.run(feed_dict={x: batch_xs,
-                                          y: batch_ys,
-                                          learning_rate: _get_learning_rate(epoch),
-                                          keras.backend.learning_phase(): 1})
+                _, loss_vals[batch] = sess.run([train_step, loss],
+                                               feed_dict={x: batch_xs, y: batch_ys,
+                                                          learning_rate: _get_learning_rate(epoch),
+                                                          keras.backend.learning_phase(): 1})
             cur = time.time()
             print("\tTook " + str(cur - prev) + " seconds")
+            print("\tTrain Loss: " + str(loss_vals.mean()))
 
             assert end >= len(X_train) # Check that all examples were used
 
             accuracy = tf_model_eval(sess, x, y, predictions, X_test, Y_test)
             assert X_test.shape[0] == 10000, X_test.shape
-            print '... Test accuracy on legitimate test examples: ' + str(accuracy)
-
+            print("\tTest Acc: " + str(accuracy))
 
         if save:
             save_path = os.path.join(FLAGS.train_dir, FLAGS.filename)

@@ -21,11 +21,8 @@ from keras.layers.normalization import BatchNormalization
 from keras.utils.visualize_util import plot
 from keras.regularizers import l2
 from keras import backend as K
-#from square_layer import SquareMulLayer
 from customized_layers import GateLayer, SliceLayer
 
-
-# import tensorflow as tf
 
 # Helper to build a conv -> BN -> relu block
 def _conv_bn_relu(nb_filter, nb_row, nb_col, subsample=(1, 1)):
@@ -70,22 +67,18 @@ def _bn_relu_conv(nb_filter, nb_row, nb_col, subsample=(1, 1)):
 # Follows improved proposed scheme in http://arxiv.org/pdf/1603.05027v2.pdf
 def _basic_block(nb_filters, init_subsample=(1, 1), skip_rate=0.5):
     def f(input):
-        if init_subsample == (1, 1):
-            gate = GateLayer(skip_rate)(input)
-        else:
-            print 'Never skip'
-            gate = GateLayer(-1.0)(input)
-        conv_input = SliceLayer(first_half=True)(gate)
-        identity = SliceLayer(first_half=False)(gate)
-        conv1 = _bn_relu_conv(nb_filters, 3, 3, subsample=init_subsample)(conv_input)
-        conv2 = _bn_relu_conv(nb_filters, 3, 3)(conv1)
-        return _shortcut(identity, conv2)
+        conv1 = _bn_relu_conv(nb_filters, 3, 3, subsample=init_subsample)(input)
+        residual1 = _bn_relu_conv(nb_filters, 3, 3)(conv1)
+
+        conv2 = _bn_relu_conv(nb_filters, 3, 3, subsample=init_subsample)(input)
+        residual2 = _bn_relu_conv(nb_filters, 3, 3)(conv2)
+        return _shortcut(input, residual1, residual2)
 
     return f
 
 
 # Adds a shortcut between input and residual block and merges them with "sum"
-def _shortcut(input, residual):
+def _shortcut(input, residual, residual2):
     # Expand channels of shortcut to match residual.
     # Stride appropriately to match residual (width, height)
     # Should be int if network architecture is correctly configured.
@@ -100,7 +93,7 @@ def _shortcut(input, residual):
                                  subsample=(stride_width, stride_height),
                                  init="he_normal", border_mode="valid")(input)
 
-    return merge([shortcut, residual], mode="sum")
+    return merge([shortcut, residual, residual2], mode="sum")
 
 
 # Builds a residual block with repeating bottleneck blocks.
@@ -118,7 +111,7 @@ def _residual_block(block_function, nb_filters, repetations, is_first_layer=Fals
 
 # http://arxiv.org/pdf/1512.03385v1.pdf
 def resnet_cifar10(repetations):
-    model_name = 'repetation_%d' % (repetations)
+    model_name = 'dual_repetation_%d' % (repetations)
         
     input = Input(shape=(3, 32, 32))
     conv1 = _conv_bn_relu(nb_filter=16, nb_row=3, nb_col=3)(input)
