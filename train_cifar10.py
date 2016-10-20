@@ -5,10 +5,8 @@ import keras
 from tensorflow.python.platform import app, flags
 
 from utils_tf import tf_model_train, tf_model_eval, batch_eval
-# from cleverhans.attacks import fgsm
 from misc import get_session, save_model, load_model
 import resnet_cifar10
-import somenet_cifar10
 import data_cifar10
 
 

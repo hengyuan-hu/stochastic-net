@@ -1,7 +1,6 @@
 import keras
 
 import resnet_cifar10
-import somenet_cifar10
 import data_cifar10
 
 
