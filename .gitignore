@@ -1,0 +1,7 @@
+.ipynb_checkpoints
+*.ipynb
+*.pyc
+model.png
+cifar-10-batches-py
+logs
+

@@ -1,7 +1,7 @@
 import tensorflow as tf
 import keras
 
-from customized_layers import GateLayer, SliceLayer
+from customized_layers import EntryGateLayer, ExitGateLayer, SliceLayer
 
 
 def get_session():
@@ -11,7 +11,7 @@ def get_session():
 
 
 def _get_model_files(model_name):
-    model_file = '%s.json' % model_name 
+    model_file = '%s.json' % model_name
     weight_file = '%s.h5' % model_name
     return model_file, weight_file
 
@@ -31,8 +31,9 @@ def load_model(model_name): #model_file, weight_file):
         loaded_model_json = json_file.read()
 
     loaded_model = keras.models.model_from_json(
-        loaded_model_json, custom_objects={'GateLayer': GateLayer,
-                                           'SliceLayer': SliceLayer})
+        loaded_model_json, custom_objects={'EntryGateLayer': EntryGateLayer,
+                                           'SliceLayer': SliceLayer,
+                                           'ExitGateLayer': ExitGateLayer})
     loaded_model.load_weights(weight_file)
     print('Loaded model from disk')
     return loaded_model
